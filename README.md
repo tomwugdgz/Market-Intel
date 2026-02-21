@@ -1,20 +1,69 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Market Intel & Tender Agent Dashboard (市场情报与招标分析平台)
 
-# Run and deploy your AI Studio app
+这是一个基于 Google Gemini API (2.0/3.0 系列模型) 开发的专业级市场情报与户外广告招标监测平台。系统集成了三个核心 Agent 角色，旨在为广告从业者提供实时、准确、具时效性的行业洞察。
 
-This contains everything you need to run your app locally.
+## 1. 核心功能模块 (Core Agents)
 
-View your app in AI Studio: https://ai.studio/apps/drive/1dA3WWvhXNscIgKKxwxT68aevwe30V-eo
+### 1.1 华南市场情报 Agent (Market Intel)
+*   **任务目标**：实时抓取并汇总华南地区（广深佛等）的最新品牌动态。
+*   **技术实现**：利用 `gemini-3-flash-preview` 模型配合 `googleSearch` 工具，确保获取的信息非离线预训练数据，而是当下的真实动态。
+*   **数据结构**：包含行业分类、品牌名、情报标题、核心摘要、来源及原文链接。
 
-## Run Locally
+### 1.2 户外招标情报 Agent (Tender Info)
+*   **任务目标**：监测全国范围内与户外广告 (OOH)、品牌全案、社区媒体相关的招标公告。
+*   **过滤逻辑**：严格筛选非广告类信息，重点突出“核心需求”与“投标截止日期”。
+*   **实用功能**：支持一键生成 `.ics` 日历文件，提醒用户在截止日期前完成投标准备。
 
-**Prerequisites:**  Node.js
+### 1.3 AI 深度分析专家 - Tom (Strategic Expert)
+*   **专家身份**：亲邻传媒（Qinlin Media）高级战略顾问。
+*   **核心逻辑**：
+    *   专注社区媒体资源适配。
+    *   **核心产品推荐**：社区单元门灯箱（建议占比 30%-48%）、广告门、开门 App。
+    *   **综合报告**：对比市场动态与招标需求，输出具名（Tom）的策略建议，并提供 1-100 的匹配度评分。
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 2. 关键技术特性 (Key Features)
+
+### 2.1 精确执行模式 (Precision Execution Mode)
+针对用户自定义输入的信息，系统启用了**高优先级目标执行协议**：
+*   **真实性验证**：通过 Google 搜索交叉验证消息真伪，严防 AI 幻觉。
+*   **时效性锁死**：严格执行“40天规则”。任何发生日期超过 40 天的消息均被标记为 `OLD`（旧消息），不予进行深度策略推荐。
+*   **零冗余输出**：临床化、去情感化的客观陈述，确保决策辅助的专业性。
+
+### 2.2 高级 UI/UX 设计
+*   **实时高亮**：根据关键词（如“亲邻传媒”、“单元门灯箱”）及搜索词，在全站范围内进行毫秒级文字高亮。
+*   **交互动效**：基于 Tailwind CSS 与 Framer-motion 风格的动画，提供沉浸式工作体验。
+*   **分享与导出**：
+    *   支持情报条目的原生 API 分享。
+    *   一键导出 Markdown 格式的深度策略报告。
+
+### 2.3 稳健的后端集成
+*   **限流退避 (Exponential Backoff)**：内置 `callWithRetry` 机制，自动处理 `429 RESOURCE_EXHAUSTED` 错误，确保在高负载下的稳定性。
+*   **结构化输出**：强制使用 `responseSchema` 定义 JSON 格式，保证 AI 输出与前端组件的完美契合。
+
+---
+
+## 3. 开发过程描述 (Development Process)
+
+### 阶段一：原型设计与 Prompt 工程
+*   定义了三种不同的系统提示词 (System Instructions)，区分 Flash 模型的“高吞吐采集”与 Pro 模型的“深思熟虑分析”。
+*   构建了针对“Tom”这一专家的逻辑模型，将其特定的产品偏好（30%-48% 比例建议）硬编码入提示词逻辑。
+
+### 阶段二：Grounding (搜索接地) 集成
+*   鉴于市场情报的时效性，全站接入 `googleSearch` 工具。开发过程中解决了如何从 `groundingChunks` 中提取原始 URI 并呈现给用户的问题，确保信息的透明度。
+
+### 阶段三：精密执行协议开发
+*   这是本项目最具挑战的部分。通过多层约束提示词，迫使模型在分析用户输入时先进行“日期回溯”与“事实对标”，只有满足“真实且 40 天内”的消息才会触发后续的策略生成逻辑。
+
+### 阶段四：健壮性优化
+*   针对 API 配额限制（Quota Limits），实现了指数补偿重试逻辑。
+*   优化了 React 状态管理，通过 `useMemo` 处理大规模关键词高亮，避免了输入框输入时的卡顿现象。
+
+---
+
+## 4. 技术栈 (Tech Stack)
+*   **Frontend**: React 19, TypeScript
+*   **Styling**: Tailwind CSS
+*   **AI SDK**: `@google/genai` (Gemini 2.5/3.0 series)
+*   **Infrastructure**: ESM.sh (Module streaming), Native Browser APIs (Calendar, Share, Clipboard)

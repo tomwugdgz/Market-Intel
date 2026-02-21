@@ -57,6 +57,13 @@ export interface AIAnalysisReport {
   contactInfo: string;
 }
 
+export interface UserNewsAnalysis {
+  status: 'REAL' | 'FAKE' | 'OLD';
+  reason: string;
+  analysis?: AIAnalysisReport;
+  verifiedDate?: string;
+}
+
 export interface GroundingChunk {
   web?: {
     uri: string;
