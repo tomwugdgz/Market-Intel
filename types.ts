@@ -2,7 +2,8 @@
 export enum AgentType {
   MARKET_INTEL = 'MARKET_INTEL',
   TENDER_INFO = 'TENDER_INFO',
-  AI_ANALYSIS = 'AI_ANALYSIS'
+  AI_ANALYSIS = 'AI_ANALYSIS',
+  BUDGET_OVERVIEW = 'BUDGET_OVERVIEW'
 }
 
 export interface IntelItem {

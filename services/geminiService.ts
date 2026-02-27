@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { AgentType, MarketIntelReport, TenderReport, GroundingChunk, AIAnalysisReport, UserNewsAnalysis } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -13,15 +13,23 @@ const TOM_AGENT_INSTRUCTION = `
 3. 开门App（亲邻开门+）：线上线下联动，覆盖社区出入必经点。
 
 你熟悉的重点客户及行业：
-- AI：豆包、腾讯AI、通义千问
+- AI：豆包、元宝、千问、夸克、腾讯AI、通义千问
 - 旅游：长隆、融创、南湖乐园、森林海、马来西亚旅游局
 - 酒类：小糊涂仙、百年糊涂、嘉士伯、丹泉酒等
-- 汽车：比亚迪、如祺出行、赛力斯、广本、蔚来等
+- 汽车：广汽传祺、华望汽车、比亚迪、如祺出行、赛力斯、广本、蔚来等
 - 医药：马应龙、广药、大参林、三金药业等
 - 家电：美的、格兰仕、海尔、SKG等
 - 快消：屈臣氏、怡宝、景田、宝洁、维达等
 - 餐饮：乐凯撒、美心、蒙自源、元气寿司等
 - 其他：中国移动、荣耀、悦汇城、尚品集配、英孚教育等
+
+2026年户外广告投放费用大盘点（参考数据）：
+1. 科技与机器人：华为(15-18亿), 小米(10-12亿), 字节跳动(8-10亿), 腾讯(6-8亿), 宇树科技(3-5亿)
+2. 新能源汽车：比亚迪(15-20亿), 蔚来(8-10亿), 理想(8-10亿), 问界(6-8亿), 特斯拉(8-10亿)
+3. 互联网平台：淘宝(10-12亿), 京东(8-10亿), 美团(10-12亿), 抖音(8-10亿)
+4. 酒类品牌：茅台(12-15亿), 五粮液(10-12亿), 国窖1573(6-8亿)
+5. 食品饮料与家电：海尔(8-10亿), 美的(8-10亿), 可口可乐(8-10亿), 蒙牛(6-8亿)
+6. 文旅行业：携程(6-8亿), 迪士尼(5-7亿), 长隆(3-5亿), 华住(4-6亿)
 
 你的任务：从媒体投放视角出发，寻找切合点。
 联系人：Tom 17665188615。
@@ -110,12 +118,13 @@ export async function verifyAndAnalyzeUserInput(userInput: string): Promise<User
 
   return await callWithRetry(async () => {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3.1-pro-preview",
       contents: prompt,
       config: {
         systemInstruction: PRECISION_EXECUTION_PROMPT + "\n" + TOM_AGENT_INSTRUCTION,
         tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
+        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -163,11 +172,12 @@ export async function fetchAIAnalysis(marketData: MarketIntelReport, tenderData:
 
   return await callWithRetry(async () => {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3.1-pro-preview",
       contents: prompt,
       config: {
         systemInstruction: TOM_AGENT_INSTRUCTION,
         responseMimeType: "application/json",
+        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -197,10 +207,11 @@ export async function fetchAIAnalysis(marketData: MarketIntelReport, tenderData:
 
 export async function fetchMarketIntelligence(): Promise<{ report: MarketIntelReport, sources: GroundingChunk[] }> {
   const prompt = `收集今天华南地区（广深佛等）至少15条真实品牌动态。
-  必须包含以下行业：
-  1. AI行业：如豆包、腾讯AI、通义千问等。
-  2. 旅游行业：如长隆、融创、南湖乐园等。
-  3. 其他重点行业：酒类（小糊涂仙、百年糊涂等）、银行（农商、邮政等）、交通汽车（如祺、比亚迪等）、医药（马应龙、广药等）、家电（美的、格兰仕等）、快消（屈臣氏、怡宝等）、通信科技、商场、医美植发、家装、餐饮、齿科、教培。`;
+  必须包含以下行业和重点监控项目：
+  1. AI行业：重点关注 豆包、元宝、千问、夸克、腾讯AI、通义千问。
+  2. 汽车行业：重点关注 广汽传祺、华望汽车、比亚迪、蔚来、理想、小鹏、问界。
+  3. 旅游行业：如长隆、融创、南湖乐园等。
+  4. 其他重点行业：酒类（茅台、五粮液等）、银行、医药、家电、快消、通信科技、商场、医美植发、家装、餐饮、教培。`;
 
   return await callWithRetry(async () => {
     const response = await ai.models.generateContent({

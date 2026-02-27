@@ -117,7 +117,8 @@ export default function App() {
     
     // User Provided Brand List
     const providedBrands = [
-      '豆包', '腾讯AI', '千问', '长隆', '融创', '南湖乐园',
+      '豆包', '元宝', '千问', '夸克', '广汽传祺', '华望汽车',
+      '腾讯AI', '通义千问', '长隆', '融创', '南湖乐园',
       '小糊涂仙', '百年糊涂', '交酒', '知已', '汾阳王酒', '丹泉酒', '金沙回沙酒', '人民小酒', '夜郎古酒', '嘉士伯',
       '农商银行', '邮政银行', '华兴银行', '兴业银行', '民生银行', '微众银行',
       '如祺出行', '长安汽车', '柳汽', '赛力斯', '广州本田', '风行汽车', '一汽大众', '东风汽车', '岚图汽车', '广物汽贸', '比亚迪', '蔚来汽车',
@@ -225,6 +226,46 @@ export default function App() {
     link.click();
   };
 
+  const exportMarketIntelToMD = () => {
+    if (!intelData) return;
+    const ts = getTimestamp();
+    let md = `# 华南市场情报\n导出日期: ${new Date().toLocaleString()}\n\n`;
+    intelData.items.forEach((item, i) => {
+      md += `### ${i + 1}. ${item.title}\n`;
+      md += `- **品牌**: ${item.brand}\n`;
+      md += `- **日期**: ${item.date}\n`;
+      md += `- **类别**: ${item.category}\n`;
+      md += `- **摘要**: ${item.summary}\n`;
+      md += `- **来源**: ${item.source}\n`;
+      md += `- **链接**: ${item.link}\n\n`;
+    });
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `news${ts}.md`;
+    link.click();
+  };
+
+  const exportTenderInfoToMD = () => {
+    if (!tenderData) return;
+    const ts = getTimestamp();
+    let md = `# 户外招标情报\n导出日期: ${new Date().toLocaleString()}\n\n`;
+    tenderData.tenders.forEach((tender, i) => {
+      md += `### ${i + 1}. ${tender.subject}\n`;
+      md += `- **类型**: ${tender.type}\n`;
+      md += `- **形式**: ${tender.form}\n`;
+      md += `- **核心需求**: ${tender.coreNeeds}\n`;
+      md += `- **截止日期**: ${tender.deadline}\n`;
+      md += `- **来源**: ${tender.source}\n`;
+      md += `- **链接**: ${tender.link}\n\n`;
+    });
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `ooh${ts}.md`;
+    link.click();
+  };
+
   const groupedIntel: Record<string, IntelItem[]> = (intelData?.items || []).reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
@@ -245,7 +286,8 @@ export default function App() {
           {[
             { id: AgentType.MARKET_INTEL, label: '华南市场情报', icon: 'intel' },
             { id: AgentType.TENDER_INFO, label: '户外招标情报', icon: 'tender' },
-            { id: AgentType.AI_ANALYSIS, label: 'AI 分析报告', icon: 'ai' }
+            { id: AgentType.AI_ANALYSIS, label: 'AI 分析报告', icon: 'ai' },
+            { id: AgentType.BUDGET_OVERVIEW, label: '2026 预算大盘', icon: 'bolt' }
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as AgentType)} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${activeTab === tab.id ? 'bg-blue-600 shadow-xl' : 'hover:bg-slate-800 text-slate-400'}`}>
               <Icon name={tab.icon} className={`w-5 h-5 ${activeTab === tab.id ? 'text-white' : 'text-slate-500'}`} /><span className="font-bold text-sm">{tab.label}</span>
@@ -261,6 +303,7 @@ export default function App() {
               {activeTab === AgentType.MARKET_INTEL && '华南地区·市场动态'}
               {activeTab === AgentType.TENDER_INFO && '核心广告招标情报'}
               {activeTab === AgentType.AI_ANALYSIS && 'Tom 的 AI 深度策略报告'}
+              {activeTab === AgentType.BUDGET_OVERVIEW && '2026 户外广告投放费用大盘点'}
             </h2>
             <div className="flex items-center gap-2 mt-1">
               <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-black text-[10px] uppercase">Verified Report</span>
@@ -272,12 +315,20 @@ export default function App() {
               <Icon name="search" className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input type="text" placeholder="全局高亮匹配..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 pr-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 transition-all w-64 shadow-sm" />
             </div>
+            {activeTab === AgentType.MARKET_INTEL && intelData && (
+              <button onClick={exportMarketIntelToMD} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"><Icon name="download" className="w-4 h-4" />导出 MD</button>
+            )}
+            {activeTab === AgentType.TENDER_INFO && tenderData && (
+              <button onClick={exportTenderInfoToMD} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"><Icon name="download" className="w-4 h-4" />导出 MD</button>
+            )}
             {activeTab === AgentType.AI_ANALYSIS && analysisData && (
               <button onClick={() => exportReportToMD(analysisData, "AI_Report")} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"><Icon name="download" className="w-4 h-4" />导出 MD</button>
             )}
-            <button onClick={() => loadData(activeTab)} disabled={loading} className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-2xl font-black shadow-xl disabled:opacity-50 transition-all">
-              <Icon name="refresh" className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />{loading ? '同步中...' : '同步情报'}
-            </button>
+            {activeTab !== AgentType.BUDGET_OVERVIEW && (
+              <button onClick={() => loadData(activeTab)} disabled={loading} className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-2xl font-black shadow-xl disabled:opacity-50 transition-all">
+                <Icon name="refresh" className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />{loading ? '同步中...' : '同步情报'}
+              </button>
+            )}
           </div>
         </header>
 
@@ -298,6 +349,122 @@ export default function App() {
           </div>
         ) : (
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
+            {activeTab === AgentType.BUDGET_OVERVIEW && (
+              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                <div className="bg-slate-900 p-12 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-blue-600/5"></div>
+                  <div className="relative z-10">
+                    <h3 className="text-4xl font-black mb-6 tracking-tighter">2026 行业预算洞察</h3>
+                    <p className="text-blue-100 text-xl font-bold leading-relaxed opacity-90">
+                      2026年是全球化深水区，品牌将通过户外广告建立高端形象。市场进入“心智争夺”存量竞争阶段，户外广告成为建立信任的核心阵地。
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {[
+                    {
+                      title: "科技与机器人",
+                      desc: "品牌价值的“高地占领”",
+                      items: [
+                        { name: "华为", budget: "15-18亿" },
+                        { name: "小米", budget: "10-12亿" },
+                        { name: "字节跳动", budget: "8-10亿" },
+                        { name: "腾讯", budget: "6-8亿" },
+                        { name: "宇树科技", budget: "3-5亿" },
+                        { name: "优必选", budget: "3-5亿" },
+                        { name: "大疆", budget: "3-5亿" }
+                      ],
+                      insight: "2026年是全球化深水区，品牌将通过户外广告建立高端形象，预计新能源汽车全年投放额将突破150亿元。"
+                    },
+                    {
+                      title: "新能源汽车",
+                      desc: "心智争夺的“持久战”",
+                      items: [
+                        { name: "比亚迪", budget: "15-20亿" },
+                        { name: "蔚来", budget: "8-10亿" },
+                        { name: "理想", budget: "8-10亿" },
+                        { name: "问界", budget: "6-8亿" },
+                        { name: "特斯拉", budget: "8-10亿" },
+                        { name: "吉利", budget: "8-10亿" }
+                      ],
+                      insight: "市场进入“心智争夺”存量竞争阶段，户外广告成为建立信任的核心阵地。"
+                    },
+                    {
+                      title: "互联网平台",
+                      desc: "线上流量的线下“收割机”",
+                      items: [
+                        { name: "淘宝", budget: "10-12亿" },
+                        { name: "京东", budget: "8-10亿" },
+                        { name: "美团", budget: "10-12亿" },
+                        { name: "抖音", budget: "8-10亿" },
+                        { name: "拼多多", budget: "8-10亿" }
+                      ],
+                      insight: "投放从“品牌曝光”转向“效果引流”，户外广告必须可追踪、可转化。"
+                    },
+                    {
+                      title: "酒类品牌",
+                      desc: "高端宴席的“心智霸主”",
+                      items: [
+                        { name: "茅台", budget: "12-15亿" },
+                        { name: "五粮液", budget: "10-12亿" },
+                        { name: "国窖1573", budget: "6-8亿" },
+                        { name: "汾酒", budget: "5-7亿" },
+                        { name: "洋河", budget: "5-7亿" }
+                      ],
+                      insight: "围绕“高端宴席”和“节日送礼”两大场景，抢占送礼心智。"
+                    },
+                    {
+                      title: "食品饮料与家电",
+                      desc: "年货消费的“刚需双雄”",
+                      items: [
+                        { name: "海尔", budget: "8-10亿" },
+                        { name: "美的", budget: "8-10亿" },
+                        { name: "格力", budget: "5-7亿" },
+                        { name: "可口可乐", budget: "8-10亿" },
+                        { name: "蒙牛", budget: "6-8亿" },
+                        { name: "伊利", budget: "6-8亿" }
+                      ],
+                      insight: "投放逻辑高度一致——离交易越近越好，节前饱和攻击是关键。"
+                    },
+                    {
+                      title: "文旅行业",
+                      desc: "春节出游的“流量捕手”",
+                      items: [
+                        { name: "携程", budget: "6-8亿" },
+                        { name: "迪士尼", budget: "5-7亿" },
+                        { name: "长隆", budget: "3-5亿" },
+                        { name: "华住", budget: "4-6亿" },
+                        { name: "南航", budget: "4-6亿" }
+                      ],
+                      insight: "出游已成新民俗，投放从“季节性”向“全年性”转变。"
+                    }
+                  ].map((sec, idx) => (
+                    <div key={idx} className="bg-white border-2 border-slate-100 p-10 rounded-[3rem] shadow-sm hover:shadow-xl transition-all group">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h4 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">{sec.title}</h4>
+                          <p className="text-sm font-bold text-slate-400">{sec.desc}</p>
+                        </div>
+                        <Icon name="bolt" className="w-6 h-6 text-blue-500 opacity-20 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="space-y-4 mb-8">
+                        {sec.items.map((item, i) => (
+                          <div key={i} className="flex justify-between items-center border-b border-slate-50 pb-2">
+                            <span className="font-bold text-slate-700">{highlightText(item.name)}</span>
+                            <span className="font-black text-blue-600 tabular-nums">{item.budget}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <p className="text-xs font-bold text-slate-500 leading-relaxed italic">“ {sec.insight} ”</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeTab === AgentType.AI_ANALYSIS && (
               <div className="space-y-12">
                 {/* Precision Execution Mode Panel */}
