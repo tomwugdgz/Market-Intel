@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AgentType, MarketIntelReport, TenderReport, IntelItem, AIAnalysisReport, UserNewsAnalysis } from './types';
-import { fetchMarketIntelligence, fetchTenderInfo, fetchAIAnalysis, verifyAndAnalyzeUserInput } from './services/geminiService';
+import { fetchMarketIntelligence, fetchTenderInfo, fetchAIAnalysis, verifyAndAnalyzeUserInput, fetchBudgetNews } from './services/geminiService';
 
 const Icon = ({ name, className = "" }: { name: string, className?: string }) => {
   switch (name) {
@@ -28,6 +28,13 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Budget News States
+  const [budgetNews, setBudgetNews] = useState<MarketIntelReport | null>(() => {
+    const saved = localStorage.getItem('budget_news');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [fetchingNews, setFetchingNews] = useState(false);
 
   // Custom News Verification States
   const [userCustomInput, setUserCustomInput] = useState('');
@@ -84,6 +91,20 @@ export default function App() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFetchBudgetNews = async () => {
+    setFetchingNews(true);
+    try {
+      const brands = ['华为', '小米', '字节跳动', '腾讯', '比亚迪', '蔚来', '理想', '问界', '特斯拉', '淘宝', '京东', '美团', '抖音', '茅台', '五粮液', '海尔', '美的', '携程', '长隆', '豆包', '元宝', '千问', '夸克', '广汽传祺', '华望汽车'];
+      const report = await fetchBudgetNews(brands);
+      setBudgetNews(report);
+      localStorage.setItem('budget_news', JSON.stringify(report));
+    } catch (err) {
+      console.error('Failed to fetch budget news:', err);
+    } finally {
+      setFetchingNews(false);
     }
   };
 
@@ -353,13 +374,48 @@ export default function App() {
               <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
                 <div className="bg-slate-900 p-12 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-blue-600/5"></div>
-                  <div className="relative z-10">
-                    <h3 className="text-4xl font-black mb-6 tracking-tighter">2026 行业预算洞察</h3>
-                    <p className="text-blue-100 text-xl font-bold leading-relaxed opacity-90">
-                      2026年是全球化深水区，品牌将通过户外广告建立高端形象。市场进入“心智争夺”存量竞争阶段，户外广告成为建立信任的核心阵地。
-                    </p>
+                  <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                    <div className="flex-1">
+                      <h3 className="text-4xl font-black mb-6 tracking-tighter">2026 行业预算洞察</h3>
+                      <p className="text-blue-100 text-xl font-bold leading-relaxed opacity-90">
+                        2026年是全球化深水区，品牌将通过户外广告建立高端形象。市场进入“心智争夺”存量竞争阶段，户外广告成为建立信任的核心阵地。
+                      </p>
+                    </div>
+                    <button 
+                      onClick={handleFetchBudgetNews}
+                      disabled={fetchingNews}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black shadow-xl transition-all active:scale-95 flex items-center gap-3 shrink-0"
+                    >
+                      <Icon name="search" className={`w-5 h-5 ${fetchingNews ? 'animate-pulse' : ''}`} />
+                      {fetchingNews ? '精密搜索中...' : '搜索品牌动态'}
+                    </button>
                   </div>
                 </div>
+
+                {budgetNews && budgetNews.items.length > 0 && (
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-2.5 bg-emerald-600 rounded-full shadow-lg shadow-emerald-600/20"></div>
+                      <h3 className="text-3xl font-black text-slate-800 tracking-tight">关联品牌实时动态 (已储存)</h3>
+                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                      {budgetNews.items.map((item, idx) => (
+                        <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+                          <div className="flex justify-between mb-4 items-center">
+                            <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-4 py-1.5 rounded-xl uppercase tracking-widest border border-emerald-100">{item.brand}</span>
+                            <span className="text-[10px] text-slate-400 font-black tracking-widest uppercase opacity-60">{item.date}</span>
+                          </div>
+                          <h4 className="text-xl font-black text-slate-900 mb-4 group-hover:text-blue-600 transition-colors leading-tight">{highlightText(item.title)}</h4>
+                          <p className="text-slate-600 text-sm font-bold mb-6 leading-relaxed opacity-80">{highlightText(item.summary)}</p>
+                          <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-40">来源: {item.source}</span>
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-[10px] font-black flex items-center gap-2 hover:underline">查看详情 <Icon name="external" className="w-3 h-3" /></a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {[

@@ -289,3 +289,40 @@ export async function fetchTenderInfo(): Promise<{ report: TenderReport, sources
     };
   });
 }
+
+export async function fetchBudgetNews(brands: string[]): Promise<MarketIntelReport> {
+  const prompt = `针对以下重点品牌，搜索并汇总它们在2026年及近期关于广告投放、市场预算、重大战略调整的最新真实新闻：${brands.join('、')}。`;
+
+  return await callWithRetry(async () => {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        systemInstruction: PRECISION_EXECUTION_PROMPT + "\n你是一个精密的情报搜索仪器。必须使用 Google Search 获取最新真实动态。仅输出 JSON 格式的 MarketIntelReport。",
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            items: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  category: { type: Type.STRING },
+                  title: { type: Type.STRING },
+                  brand: { type: Type.STRING },
+                  date: { type: Type.STRING },
+                  summary: { type: Type.STRING },
+                  source: { type: Type.STRING },
+                  link: { type: Type.STRING }
+                }
+              }
+            }
+          }
+        }
+      },
+    });
+    return JSON.parse(response.text);
+  });
+}
